@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Tic-Tac-Toe</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .big-board {
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            grid-template-rows: repeat(3, 150px);
+            gap: 5px;
+            margin: 20px auto;
+            width: 470px;
+        }
+        .mini-board {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 2px;
+            background-color: #000;
+            padding: 5px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            background-color: #eee;
+            cursor: pointer;
+            border: 1px solid #000;
+        }
+        .claimed {
+            font-size: 3em;
+            color: red;
+            background-color: lightgray;
+        }
+        .scoreboard {
+            margin-top: 20px;
+        }
+        .database {
+            margin-top: 20px;
+            border: 1px solid black;
+            padding: 10px;
+            width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ultimate Tic-Tac-Toe</h1>
+    <div class="big-board" id="bigBoard"></div>
+    <h2 id="status">Player X's turn</h2>
+    <button onclick="resetGame()">Restart Game</button>
+    <div class="scoreboard">
+        <h2>Scoreboard</h2>
+        <p>Player X: <span id="scoreX">0</span></p>
+        <p>Player O: <span id="scoreO">0</span></p>
+        <button onclick="resetScores()">Reset Scores</button>
+    </div>
+    
+    <div class="database">
+        <h2>Win Database</h2>
+        <ul id="winDatabase"></ul>
+        <button onclick="resetDatabase()">Reset Database</button>
+    </div>
+    
+    <script>
+        const bigBoard = document.getElementById("bigBoard");
+        const status = document.getElementById("status");
+        const scoreXDisplay = document.getElementById("scoreX");
+        const scoreODisplay = document.getElementById("scoreO");
+        const winDatabase = document.getElementById("winDatabase");
+        let currentPlayer = "X";
+        let scores = { X: 0, O: 0 };
+        let mainBoard = Array(9).fill(null);
+        let miniBoards = Array(9).fill().map(() => Array(9).fill(null));
+        let winRecords = [];
+        
+        function createBoard() {
+            bigBoard.innerHTML = "";
+            mainBoard.fill(null);
+            miniBoards = Array(9).fill().map(() => Array(9).fill(null));
+            currentPlayer = "X";
+            status.innerText = "Player X's turn";
+            
+            for (let i = 0; i < 9; i++) {
+                let miniBoard = document.createElement("div");
+                miniBoard.classList.add("mini-board");
+                miniBoard.dataset.index = i;
+                
+                for (let j = 0; j < 9; j++) {
+                    let cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    cell.dataset.big = i;
+                    cell.dataset.small = j;
+                    cell.addEventListener("click", handleClick, { once: true });
+                    miniBoard.appendChild(cell);
+                }
+                bigBoard.appendChild(miniBoard);
+            }
+        }
+        
+        function handleClick(event) {
+            let bigIndex = event.target.dataset.big;
+            let smallIndex = event.target.dataset.small;
+            
+            if (mainBoard[bigIndex] !== null || miniBoards[bigIndex][smallIndex] !== null) return;
+            
+            miniBoards[bigIndex][smallIndex] = currentPlayer;
+            event.target.innerText = currentPlayer;
+            
+            if (checkWinner(miniBoards[bigIndex])) {
+                mainBoard[bigIndex] = currentPlayer;
+                let parentBoard = event.target.parentElement;
+                parentBoard.innerHTML = currentPlayer;
+                parentBoard.classList.add("claimed");
+                
+                if (checkWinner(mainBoard)) {
+                    status.innerText = `Player ${currentPlayer} wins the game!`;
+                    scores[currentPlayer]++;
+                    winRecords.push(`Player ${currentPlayer} won at ${new Date().toLocaleString()}`);
+                    updateScores();
+                    updateDatabase();
+                    disableBoard();
+                    return;
+                }
+            }
+            
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            status.innerText = `Player ${currentPlayer}'s turn`;
+        }
+        
+        function checkWinner(board) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        function disableBoard() {
+            document.querySelectorAll(".cell").forEach(cell => cell.removeEventListener("click", handleClick));
+        }
+        
+        function resetGame() {
+            createBoard();
+        }
+        
+        function updateScores() {
+            scoreXDisplay.innerText = scores.X;
+            scoreODisplay.innerText = scores.O;
+        }
+        
+        function updateDatabase() {
+            winDatabase.innerHTML = "";
+            winRecords.forEach(record => {
+                let li = document.createElement("li");
+                li.innerText = record;
+                winDatabase.appendChild(li);
+            });
+        }
+        
+        function resetScores() {
+            scores = { X: 0, O: 0 };
+            updateScores();
+        }
+        
+        function resetDatabase() {
+            winRecords = [];
+            updateDatabase();
+        }
+        
+        createBoard();
+    </script>
+</body>
+</html>
